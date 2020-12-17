@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <style type="text/css">
+        #app {
+            /* https://uigradients.com/#Margo */
+            background: #FFEFBA; /* fallback for old browsers */
+            background: -webkit-linear-gradient(to bottom, #FFFFFF, #FFEFBA); /* Chrome 10-25, Safari 5.1-6 */
+            background: linear-gradient(to bottom, #FFFFFF, #FFEFBA); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        .v-toolbar__title {
+            color: #1976D2;
+            font-weight: bold;
+            font-size: 1.5em;
+        }
+
+        .v-toolbar__title .v-icon {
+            color: #1976D2 !important;
+        }
+
+        .v-toolbar__title span {
+            color: black;
+        }
+
+        .btn-wrap {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-box {
+            width: 45%;
+        }
+
+        .v-footer * {
+            font-weight: bold;
+            color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <v-app>
+        <v-app-bar app color="white">
+            <v-toolbar-title>
+                <v-icon large @click="resetAll">
+                    mdi-home-circle
+                </v-icon>
+
+                Unanimo Party
+
+                <span v-if="totalPoint !== 0">- {{ totalPoint }}</span>
+            </v-toolbar-title>
+        </v-app-bar>
+
+        <v-main>
+            <v-tabs
+                v-model="tab"
+                grow
+            >
+                <v-tab
+                    v-for="(item, index) in tabs"
+                    :key="item"
+                >
+                    {{ item }}
+                    <template v-if="index === 0">
+                        - {{ game1Point }}
+                    </template>
+                    <template v-else-if="index === 1">
+                        - {{ game2Point }}
+                    </template>
+                    <template v-else-if="index === 2">
+                        - {{ game3Point }}
+                    </template>
+                </v-tab>
+            </v-tabs>
+
+            <v-container>
+                <v-card class="pa-3 mb-5">
+                    <v-row
+                        v-for="n in 6"
+                        :key="n"
+                    >
+                        <v-col cols="7">
+                            <v-text-field
+                                v-model="editGameItem.items[n-1].text"
+                                :label="n"
+                                placeholder=" "
+                                outlined
+                                hide-details
+                                clearable
+                                :disabled="finishMode"
+                            />
+                        </v-col>
+                        <v-col cols="5">
+                            <v-select
+                                v-model="editGameItem.items[n-1].point"
+                                :items="pointItems"
+                                label="Point"
+                                outlined
+                                hide-details
+                                clearable
+                                @change="changePoint"
+                            />
+                        </v-col>
+                    </v-row>
+                </v-card>
+
+                <div class="btn-wrap">
+                    <div class="btn-box">
+                        <v-btn block rounded color="error" @click="reset">
+                            <v-icon class="mr-1">mdi-trash-can</v-icon>
+                            RESET GAME
+                        </v-btn>
+                    </div>
+
+                    <div
+                        v-if="!finishMode"
+                        class="btn-box"
+                    >
+                        <v-btn block rounded color="primary" @click="finish">
+                            <v-icon class="mr-1">mdi-lock</v-icon>
+                            FINISH
+                        </v-btn>
+                    </div>
+                    <div
+                        v-else
+                        class="btn-box"
+                    >
+                        <v-btn block rounded color="secondary" @click="modify">
+                            <v-icon class="mr-1">mdi-pencil</v-icon>
+                            MODIFY
+                        </v-btn>
+                    </div>
+                </div>
+            </v-container>
+        </v-main>
+
+        <v-footer app color="white">
+            <a href='https://github.com/pwsunf/vuetify-unanimo-party/' target='_blank'>
+                <span><v-icon small>mdi-github</v-icon> pwsunf</span>
+            </a>
+
+            <v-spacer></v-spacer>
+
+            <span>{{ editGameItem.dateStr }}</span>
+        </v-footer>
+    </v-app>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.27.0/moment.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        vuetify: new Vuetify(),
+        data: () => ({
+            tab: 0,
+            tabs: ['G1', 'G2', 'G3'],
+            pointItems: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
+            gameItems: [],
+            defaultGameItem: {
+                finish: false,
+                dateStr: '',
+                items: [
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    }
+                ]
+            },
+            editGameItem: {
+                finish: false,
+                dateStr: '',
+                items: [
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    },
+                    {
+                        text: '',
+                        point: null
+                    }
+                ]
+            }
+        }),
+        computed: {
+            game1Point() {
+                return this.getTargetTotalPoint(0)
+            },
+            game2Point() {
+                return this.getTargetTotalPoint(1)
+            },
+            game3Point() {
+                return this.getTargetTotalPoint(2)
+            },
+            totalPoint() {
+                return this.game1Point + this.game2Point + this.game3Point
+            },
+            finishMode() {
+                return this.editGameItem.finish
+            }
+        },
+        watch: {
+            tab() {
+                this.initialize()
+            }
+        },
+        mounted() {
+            this.initialize()
+        },
+        methods: {
+            initialize() {
+                this.gameItems = []
+
+                for (let i = 0; i < 3; i++) {
+                    this.gameItems.push(JSON.parse(JSON.stringify(this.defaultGameItem)))
+                }
+
+                let storageItemsStr = localStorage.getItem('items')
+                if (storageItemsStr) {
+                    let storageItems = JSON.parse(storageItemsStr)
+
+                    let i = 0
+                    for (let storageItem of storageItems) {
+                        Object.assign(this.gameItems[i], storageItem)
+                        i++
+                    }
+                }
+
+                this.editGameItem = this.gameItems[this.tab]
+            },
+            resetAll() {
+                if (confirm('Do you want to reset all data?')) {
+                    localStorage.clear()
+                    this.initialize()
+                }
+            },
+            reset() {
+                if (confirm('Do you want to reset the data?')) {
+                    this.editGameItem = JSON.parse(JSON.stringify(this.defaultGameItem))
+                    this.save()
+                    this.initialize()
+                }
+            },
+            finish() {
+                this.editGameItem.finish = true
+                this.editGameItem.dateStr = moment().format('MM/DD HH:mm:ss')
+                this.save()
+            },
+            modify() {
+                if (confirm('Do you want to modify the data?')) {
+                    this.editGameItem.finish = false
+                    this.editGameItem.dateStr = ''
+                    this.save()
+                }
+            },
+            changePoint() {
+                this.save()
+                this.initialize()
+            },
+            getTargetTotalPoint(idx) {
+                let total = 0
+
+                if (this.gameItems[idx]) {
+                    this.gameItems[idx].items.forEach(item => {
+                        if (item.point) {
+                            total += Number(item.point)
+                        }
+                    })
+                }
+
+                return total
+            },
+            save() {
+                this.gameItems[this.tab] = JSON.parse(JSON.stringify(this.editGameItem))
+                localStorage.setItem('items', JSON.stringify(this.gameItems))
+            }
+        }
+    })
+</script>
+</body>
+</html>
